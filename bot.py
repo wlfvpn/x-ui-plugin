@@ -8,6 +8,8 @@ from telegram.ext import Application, CallbackQueryHandler, CommandHandler, Cont
 from server_manager import ServerManager
 import yaml
 from utils import load_config
+import argparse
+
 
 server_manager = ServerManager()
 
@@ -106,7 +108,15 @@ async def is_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return chat_member.status in ["member", "creator"]
 
 def main() -> None:
-    config = load_config()    
+    # Parse the config file path from the command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_path', help='Path to the config file', default='config.yaml')
+    args = parser.parse_args()
+    config_path = args.config_path
+
+    # Load the config file
+    config = load_config(config_path)    
+      
     
     """Run the bot."""
     # Create the Application and pass it your bot's token.

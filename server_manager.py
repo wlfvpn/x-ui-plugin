@@ -12,10 +12,9 @@ class ServerManager():
         self.db = SQLiteDB(database_path)
         for server_addr, server_config in self.config['servers'].items():
             self.servers[server_addr] = Server(server_addr,**server_config, db=self.db)
-
+    
     def get_low_load_server(self)-> Server:
         # return min(self.servers.values(), key=lambda s: s.get_load())
-        print(self.servers.values())
         low_load_servers = []
         
         for server_address, server in self.servers.items():
@@ -29,9 +28,10 @@ class ServerManager():
  
        
     def generate_url(self, telegram_id, telegram_username):
-        existing_link = self.db.get_link(telegram_id)
-        if existing_link is not None:
-            return True, existing_link
+        if self.config['generate_unique']:
+            existing_link = self.db.get_link(telegram_id)
+            if existing_link is not None:
+                return True, existing_link
         
         server = self.get_low_load_server()
         if server is None:
