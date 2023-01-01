@@ -1,0 +1,9 @@
+telegram_bot_token: "TOKEN" #change it
+maintenance: false #turn it to true to force the bot to go into maintanance mode.
+servers: 
+  "SERVER_URL": #example "google.com"
+    max_users: 1000 # change it
+    username: "USERNAME"
+    password: "PASSWORD"
+    port: 54321 #change it
+    traffic_limit: 7516192768 #7GB

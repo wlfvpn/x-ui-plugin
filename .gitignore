@@ -1,0 +1,7 @@
+server.bash
+config.yaml
+*.db
+*.pyc
+__pycache__/
+.ipynb_ceckpoints/
+*.ipynb
