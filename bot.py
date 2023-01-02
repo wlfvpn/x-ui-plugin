@@ -31,14 +31,16 @@ async def gen_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if not update.effective_user.username:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Please setup a username for your telegram account.")
-        return
+        return 
   
-    if not await is_member(update, context):
+    if not await is_member(update, context, send_thank_you=False):
         return
     
-    ret, url = server_manager.generate_url(str(update.effective_user.id),str(update.effective_user.username)) 
+    ret, url, server_desc = server_manager.generate_url(str(update.effective_user.id),str(update.effective_user.username)) 
     if ret:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=server_desc)
         await context.bot.send_message(chat_id=update.effective_chat.id, text="`"+url+"`", parse_mode="MarkdownV2")
+        
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Something went wrong. Please try again in few mintues. If it happened again, please contact our support.")
         await context.bot.send_message(chat_id=update.effective_chat.id, text="مشکلی در ارتباط با سرورها پیش آمده. لطفا مجدد تکرار کنید.")
@@ -94,13 +96,14 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """Displays info on how to use the bot."""
     await update.message.reply_text("Use /start to test this bot.")
 
-async def is_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def is_member(update: Update, context: ContextTypes.DEFAULT_TYPE, send_thank_you=True):
     # Check if the client is a member of the specified channel
     channel_id = '@WomanLifeFreedomVPN'  # The first argument is the channel ID
     user_id = update.effective_user.id # update.message.from_user.id  # Get the client's user ID
     chat_member = await context.bot.get_chat_member(chat_id=channel_id, user_id=user_id)
     if chat_member.status in ["member", "creator"]:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for subscribing to our channel!")
+        if send_thank_you:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for subscribing to our channel!")
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Please subscribe to our channel @WomanLifeFreedomVPN.")
         await context.bot.send_message(chat_id=update.effective_chat.id, text="لطفا ابتدا عضو کانال شوید. این وی پی ان محدود به اعضای کانال می باشد.")
