@@ -28,9 +28,9 @@ class SQLiteDB:
             """Returns the link for the given telegram_id, or None if not found"""
             query = f"SELECT link FROM users WHERE telegram_id = ?"
             self.cursor.execute(query, (telegram_id,))
-            row = self.cursor.fetchone()
-            if row:
-                return row[0]
+            rows = self.cursor.fetchall()
+            if rows:
+                return '\n \n'.join([row[0] for row in rows])
             return None
         
     def generate_random_port(self, server):

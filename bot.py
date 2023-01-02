@@ -11,7 +11,6 @@ from utils import load_config
 import argparse
 
 
-server_manager = ServerManager()
 
 # Enable logging
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -47,7 +46,7 @@ async def gen_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
       
 async def is_maintenance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
-    config = load_config()
+    config = load_config(config_path)
     if config['maintenance']:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry. The bot is under maintanance right now.")
         await context.bot.send_message(chat_id=update.effective_chat.id, text=".در حال ارتقا ربات هستیم. ربات بصورت موقتی غیرفعال است.")
@@ -64,11 +63,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await is_member(update,context):
         return
         
-    keyboard = [[InlineKeyboardButton("Get My Private VPN Link", callback_data="gen_link")],
-                [InlineKeyboardButton("Usage Report", callback_data="usage")],
-                [InlineKeyboardButton("Instructions", callback_data="instructions")],
-                [InlineKeyboardButton("I want to contribute and help",url="https://t.me/+0l8_7FaM-UkyNzIx", callback_data="contribute")],
-                [InlineKeyboardButton("Our Channel", url="https://t.me/WomanLifeFreedomVPN",callback_data="contact_support")]]
+    keyboard = [[InlineKeyboardButton("دریافت لینک شخصی", callback_data="gen_link")],
+                [InlineKeyboardButton("گزارش استفاده", callback_data="usage")],
+                [InlineKeyboardButton("رو چه نرم افزاری کار میکنه؟", callback_data="instructions")],
+                [InlineKeyboardButton("می خواهم کمک کنم",url="https://t.me/+0l8_7FaM-UkyNzIx", callback_data="contribute")],
+                [InlineKeyboardButton("لینک کانال", url="https://t.me/WomanLifeFreedomVPN",callback_data="contact_support")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Please choose one of the following options:", reply_markup=reply_markup)
@@ -112,8 +111,10 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', help='Path to the config file', default='config.yaml')
     args = parser.parse_args()
+    global config_path
     config_path = args.config_path
-
+    global server_manager
+    server_manager = ServerManager(config_path=config_path)
     # Load the config file
     config = load_config(config_path)    
       

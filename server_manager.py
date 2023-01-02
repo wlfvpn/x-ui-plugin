@@ -6,8 +6,8 @@ from datetime import datetime
 import random
 
 class ServerManager():
-    def __init__(self,database_path='database.db'):
-        self.config = load_config()
+    def __init__(self,database_path='database.db',config_path='config.yaml'):
+        self.config = load_config(config_path)
         self.servers = {}
         self.db = SQLiteDB(database_path)
         for server_addr, server_config in self.config['servers'].items():
@@ -32,7 +32,7 @@ class ServerManager():
             existing_link = self.db.get_link(telegram_id)
             if existing_link is not None:
                 return True, existing_link
-        
+                
         server = self.get_low_load_server()
         if server is None:
             print('Error: server is full.')
