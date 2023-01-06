@@ -8,7 +8,7 @@ from sqlitedb import SQLiteDB
 
 
 class Server():
-    def __init__(self, address, max_users, username, password, port, traffic_limit, db):
+    def __init__(self, address, max_users, username, password, port, traffic_limit, description, db):
         self.address = address
         self.max_users = max_users
         self.username = username
@@ -16,6 +16,7 @@ class Server():
         self.port = port
         self.traffic_limit = traffic_limit
         self.db = db
+        self.description = description
     
     def login(self):
         payload = {'username': self.username, 'password': self.password}

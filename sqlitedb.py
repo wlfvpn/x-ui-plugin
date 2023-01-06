@@ -33,6 +33,15 @@ class SQLiteDB:
                 return '\n \n'.join([row[0] for row in rows])
             return None
         
+    def get_server(self, telegram_id):
+        """Returns the link for the given telegram_id, or None if not found"""
+        query = f"SELECT server FROM users WHERE telegram_id = ?"
+        self.cursor.execute(query, (telegram_id,))
+        rows = self.cursor.fetchone()
+        if rows:
+            return rows[0]
+        return None
+    
     def generate_random_port(self, server):
         """Generates a random port that is not in the table for the given server"""
         port = random.randint(10000, 50000)

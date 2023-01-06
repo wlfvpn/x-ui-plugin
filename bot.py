@@ -37,6 +37,8 @@ async def gen_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     ret, url, server_desc = server_manager.generate_url(str(update.effective_user.id),str(update.effective_user.username)) 
+    
+    print(f'Gave link to @{update.effective_user.username}')
     if ret:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=server_desc)
         await context.bot.send_message(chat_id=update.effective_chat.id, text="`"+url+"`", parse_mode="MarkdownV2")
@@ -52,7 +54,8 @@ async def is_maintenance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if config['maintenance']:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry. The bot is under maintanance right now.")
         await context.bot.send_message(chat_id=update.effective_chat.id, text=".در حال ارتقا ربات هستیم. ربات بصورت موقتی غیرفعال است.")
-    
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="در حال حاضر سرور پر شده است. ")
+
     return config['maintenance']
 
     
@@ -105,7 +108,7 @@ async def is_member(update: Update, context: ContextTypes.DEFAULT_TYPE, send_tha
         if send_thank_you:
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Thank you for subscribing to our channel!")
     else:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Please subscribe to our channel @WomanLifeFreedomVPN.")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Please subscribe to our channel {channel_id}.")
         await context.bot.send_message(chat_id=update.effective_chat.id, text="لطفا ابتدا عضو کانال شوید. این وی پی ان محدود به اعضای کانال می باشد.")
     return chat_member.status in ["member", "creator"]
 

@@ -30,23 +30,24 @@ class ServerManager():
     def generate_url(self, telegram_id, telegram_username):
         if self.config['generate_unique']:
             existing_link = self.db.get_link(telegram_id)
-            if existing_link is not None:
-                return True, existing_link
+            existing_server = self.db.get_server(telegram_id)
+            if existing_link is not None and existing_server is not None:
+                return True, existing_link, self.servers[existing_server].description
                 
         server = self.get_low_load_server()
         if server is None:
             print('Error: server is full.')
-            return False, 'Server is currently full. Please retry later.'
+            return False, 'سرور در حال حاضر پر می باشد. لطفا بعدا مجدد تلاش کنید...'
         
         remark = telegram_id + '@' + telegram_username
         creation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ret, link, port = server.generate_url(remark)
         if ret:
             self.db.add_row('users',(telegram_id, telegram_username, remark, creation_date, link, server.address, port, 0, server.traffic_limit))
-            return True, link
+            return True, link, server.description
         else:
             print('Error: Cannot generate link for {telegram_username} from', server.address)
-            return False, "Server couldn't generate a link. Please retry."
+            return False, "Server couldn't generate a link. Please retry.", None
         
         
 if __name__=="__main__":
