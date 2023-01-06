@@ -33,7 +33,7 @@ class Server():
         port = self.db.generate_random_port(self.address)
         if port is None:
             print('Error, cannot get any ports from', self.address) #TODO: use logging
-            return False, None
+            return False, None, None
         
         user_config = gen_user_config(remark, random_client_id, self.address, port, traffic_limit)
         
@@ -43,10 +43,10 @@ class Server():
           print('Added', remark, r.content)
           link = f"vless://{random_client_id}@{self.address}:{port}?type=tcp&security=xtls&flow=xtls-rprx-direct&sni={self.address}&alpn=h2,http/1.1#{remark}"
           print(link)
-          return True, link
+          return True, link, port
         else:
           print("Error:",r.content)
-          return False, None
+          return False, None, None
           
 if __name__=="__main__":
     config = load_config()
