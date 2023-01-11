@@ -1,5 +1,6 @@
 server.bash
 config.yaml
+config_test.yaml
 *.db
 *.pyc
 __pycache__/

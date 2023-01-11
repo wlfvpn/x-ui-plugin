@@ -9,3 +9,4 @@ servers:
     password: "PASSWORD" #example "admin"
     port: 54321 #change it
     traffic_limit: 7516192768 #7GB
+    description: "Server Location: Germany (xx)"
