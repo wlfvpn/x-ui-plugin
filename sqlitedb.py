@@ -9,7 +9,7 @@ class SQLiteDB:
 
         self.cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
         if not self.cursor.fetchone():
-            self.cursor.execute(f"CREATE TABLE users (telegram_id, telegram_username, remark, uuid, creation_date, link, server, port)")
+            self.cursor.execute(f"CREATE TABLE users (telegram_id, telegram_username, remark, uuid, creation_date, link, server, port, mode)")
         
         self.cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='inbounds'")
         if not self.cursor.fetchone():
@@ -66,7 +66,7 @@ class SQLiteDB:
             return None    
 
 
-    def get_link(self, telegram_id):
+    def get_links(self, telegram_id):
             """Returns the link for the given telegram_id, or None if not found"""
             query = f"SELECT link FROM users WHERE telegram_id = ?"
             self.cursor.execute(query, (telegram_id,))

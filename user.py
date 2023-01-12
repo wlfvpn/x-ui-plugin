@@ -3,10 +3,11 @@ import uuid
 import random
 import json
 
-def gen_user_config_vless_xtls(name :str,email, my_uuid:str, server_address:str, port: int, traffic_limit=0,clients=None):
+def gen_user_config_vless_xtls(name :str,email, my_uuid:str, server_address:str, port: int, traffic_limit, clients=None):
   new_client = [
         {"email": email,
           "id": my_uuid,
+          "flow": "xtls-rprx-direct",
         }]
   if clients:
     clients += new_client
@@ -23,7 +24,7 @@ def gen_user_config_vless_xtls(name :str,email, my_uuid:str, server_address:str,
     "security": "xtls",
     "xtlsSettings": {
       "serverName": server_address,
-      "alpn": ["h2","http/1.1"],
+      "alpn": "h2,http/1.1",
       "certificates": [
         {
           "certificateFile": "/root/cert.crt",
@@ -32,6 +33,7 @@ def gen_user_config_vless_xtls(name :str,email, my_uuid:str, server_address:str,
       ]
     },
     "tcpSettings": {
+      "acceptProxyProtocol": False,
       "header": {
         "type": "none"
       }

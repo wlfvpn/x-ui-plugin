@@ -29,10 +29,10 @@ class ServerManager():
        
     def generate_url(self, telegram_id, telegram_username):
         if self.config['generate_unique']:
-            existing_link = self.db.get_link(telegram_id)
+            existing_links = self.db.get_links(telegram_id)
             existing_server = self.db.get_server(telegram_id)
-            if existing_link is not None and existing_server is not None:
-                return True, existing_link, self.servers[existing_server].description
+            if existing_links is not None and existing_server is not None:
+                return True, existing_links, self.servers[existing_server].description
                 
         server = self.get_low_load_server()
         if server is None:
@@ -44,7 +44,7 @@ class ServerManager():
         if ret:
             return True, link, server.description
         else:
-            print('Error: Cannot generate link for {telegram_username} from', server.address)
+            print(f'Error: Cannot generate link for {telegram_username} from {server.address}')
             return False, "Server couldn't generate a link. Please retry.", None
         
         

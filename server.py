@@ -8,7 +8,7 @@ from sqlitedb import SQLiteDB
 from datetime import datetime
 
 class Server():
-    def __init__(self, address, max_users, username, password, port, traffic_limit, description, db, mode):
+    def __init__(self, address, max_users, username, password, port, traffic_limit, description, same_port, multi_port, cdn, ip, db):
         self.address = address
         self.max_users = max_users
         self.username = username
@@ -17,39 +17,54 @@ class Server():
         self.traffic_limit = traffic_limit
         self.db = db
         self.description = description
-        self.mode = "SAME_PORT"
         self.vless_ws_port = 2053
-        if self.mode=="SAME_PORT":
+        self.same_port = same_port
+        self.multi_port = multi_port
+        self.cdn = cdn
+        self.ip = ip
+        cloudflare_http_ports = [80, 8080, 8880, 2052, 2082, 2086, 2095] 
+        cloudflare_https_ports = [443, 2053, 2083, 2087, 2096, 8443]
+        
+        if self.cdn and self.port not in cloudflare_http_ports: #change to cloudflare_http_ports if you use https panel 
+            self.url = f"{self.ip}:{self.port}"
+        else:
+            self.url = f"{self.address}:{self.port}"
+            
+        if self.same_port['active']:
             self.initialize_inbound()
+            print('initialized inbound')
+            
         print(f"Server {self.address} initialized successfully.")
             
     def login(self):
         payload = {'username': self.username, 'password': self.password}
-        url = f"http://{self.address}:{self.port}/login" #TODO: Make it with https
+        url = f"http://{self.url}/login" #TODO: Make it with https
         r = requests.post(url, data=payload)
         return r
     
     def initialize_inbound(self):
         remark = "vless-ws-tls-cdn"
-        print('&&&&',self.db.query_from_remark_and_server('id',self.address,remark) )
         if self.db.query_from_remark_and_server('id',self.address,remark) is not None:
             return
         random_client_id =  str(uuid.uuid4()) 
 
         creation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        user_config = gen_user_config_vless_ws(name=remark, email="initialize@womanlifefreedom", uuid=random_client_id, server_address=self.address, port=2053, traffic_limit=self.traffic_limit)
+        user_config = gen_user_config_vless_ws(name=remark, email="initialize@womanlifefreedom", uuid=random_client_id, server_address=self.address, port=self.same_port['port'], traffic_limit=self.traffic_limit)
         r = self.login()
-        r = requests.post(f"http://{self.address}:{self.port}/xui/inbound/add", data=user_config, cookies=r.cookies) #TODO: Make it with http
+        r = requests.post(f"http://{self.url}/xui/inbound/add", data=user_config, cookies=r.cookies) #TODO: Make it with http
         self.db.add_row('inbounds',(r.json()['obj']['id'],remark, r.json()['obj']['settings'], self.address, self.vless_ws_port, 0, creation_date))
 
     def get_load(self):
         return 0
-    
-    def generate_url(self, telegram_id, telegram_username, mode="SAME_PORT") -> tuple[bool,str]:
-        if mode=="SAME_PORT":
-            remark = telegram_id + '@' + telegram_username
+
+    def generate_url(self, telegram_id, telegram_username) -> tuple[bool,str]:
+        random_client_id =  str(uuid.uuid4())
+        remark = telegram_id + '@' + telegram_username
+        creation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        links = []
+        
+        if self.same_port['active']:
             inbound_name = "vless-ws-tls-cdn"
-            random_client_id =  str(uuid.uuid4())
             current_setting = self.db.query_from_remark_and_server('settings',self.address,inbound_name)
             clients = json.loads(current_setting)['clients']
             email = remark 
@@ -57,38 +72,44 @@ class Server():
             # print(config)
             inbound_id = self.db.query_from_remark_and_server('id',self.address,inbound_name)
             r = self.login()
-            r = requests.post(f"http://{self.address}:{self.port}/xui/inbound/update/{inbound_id}", data=config, cookies=r.cookies) #TODO: Make it with https
+            r = requests.post(f"http://{self.url}/xui/inbound/update/{inbound_id}", data=config, cookies=r.cookies) #TODO: Make it with https
             if json.loads(r.text)['success']:
                 self.db.update_settings(inbound_id,config['settings'])
-                creation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
                 link = f"vless://{random_client_id}@66.235.200.136:{self.vless_ws_port}?type=ws&security=tls&host={self.address}&sni={self.address}&alpn=http/1.1&path=/wlf?ed=2048#WomanLifeFreedomVPN@{telegram_username}"
-                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, self.vless_ws_port))
+                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, self.vless_ws_port,'same_port'))
                 print(link)
-                return True, link
+                links.append(link)
             else:
                 return False, None
                  
-        elif mode=="SEPERATE_PORT":
-            if traffic_limit is None:
-                traffic_limit=self.traffic_limit
-            random_client_id =  str(uuid.uuid4()) 
+        if self.multi_port['active']:
             port = self.db.generate_random_port(self.address)
             if port is None:
                 print('Error, cannot get any ports from', self.address) #TODO: use logging
-                return False, None
-            
-            user_config = gen_user_config_vless_xtls(remark, random_client_id, self.address, port, traffic_limit)
-            print('sending**************************')
+                return False, None           
+            user_config = gen_user_config_vless_xtls(remark, telegram_id, random_client_id, self.address, port, self.traffic_limit)
             r = self.login()
-            r = requests.post(f"http://{self.address}:{self.port}/xui/inbound/add", data=user_config, cookies=r.cookies) #TODO: Make it with https
+            r = requests.post(f"http://{self.url}/xui/inbound/add", data=user_config, cookies=r.cookies) #TODO: Make it with https
             if json.loads(r.text)['success']:
             #   print('Added', remark, r.content)
-                link = f"vless://{random_client_id}@{self.address}:{port}?type=tcp&security=xtls&flow=xtls-rprx-direct&sni={self.address}&alpn=h2,http/1.1#{remark}"
+                if self.cdn:
+                    address = self.ip
+                else:
+                    address = self.address
+                        
+                address = self.address    #overwrite because xtls cannot connect through ip. You can configure other protocols without tls
+                
+                link = f"vless://{random_client_id}@{address}:{port}?type=tcp&security=xtls&flow=xtls-rprx-direct&sni={self.address}&alpn=h2,http/1.1#{remark}"
+                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, port,'multi_port'))
+
                 print(link)
-                return True, link
+                links.append(link)
             else:
-            #   print("Error:",r.content)
-                return False, None
+                print("Error:",r.content)
+                return False, link[0]
+            
+        return True, '\n \n'.join(links)
          
 if __name__=="__main__":
     config = load_config('config_test.yaml')

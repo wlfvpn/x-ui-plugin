@@ -3,7 +3,7 @@
 import logging
 import requests
 from telegram import __version__ as TG_VER
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes
 from server_manager import ServerManager
 import yaml
@@ -73,7 +73,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 [InlineKeyboardButton("گزارش استفاده", callback_data="usage")],
                 [InlineKeyboardButton("رو چه نرم افزاری کار میکنه؟", callback_data="instructions")],
                 [InlineKeyboardButton("می خواهم کمک کنم",url="https://t.me/+0l8_7FaM-UkyNzIx", callback_data="contribute")],
-                [InlineKeyboardButton("لینک کانال", url="https://t.me/WomanLifeFreedomVPN",callback_data="contact_support")]]
+                [InlineKeyboardButton("لینک کانال", url="https://t.me/WomanLifeFreedomVPN",callback_data="contact_support")],
+                [InlineKeyboardButton("تست سرعت", web_app=WebAppInfo(url="https://pcmag.speedtestcustom.com"))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text("Please choose one of the following options:", reply_markup=reply_markup)
