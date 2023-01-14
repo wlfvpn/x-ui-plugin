@@ -1,12 +1,55 @@
+# This setting randomly chooses a server between pools. FOr example in here we have 2 pools i.e. pool1 and pool2.
+# pool1 has 2 servers and pool2 has one server. It randomly chooses one server among pool1 and gives an url link then
+# it chooses randomly from pool2 (which is one server) and gives another link from pool2. At the end user will get two links
+# one link from each pool.
+
 telegram_bot_token: "TOKEN" #change it
 maintenance: false #turn it to true to force the bot to go into maintanance mode.
 generate_unique: true
 
-servers: 
-  "SERVER_URL": #example "google.com"
-    max_users: 1000 # change it
-    username: "USERNAME" #example "admin"
-    password: "PASSWORD" #example "admin"
-    port: 54321 #change it
-    traffic_limit: 7516192768 #7GB
-    description: "Server Location: Germany (xx)"
+pools:
+  pool1: #one server will be selected  in every pool
+    "google.womanlifefreedom.vip": #example "google.com"
+      cdn: true #set true if cdn proxy is on
+      ip: "92.217.201.245" # if cdn is true and multi_port is active, you have to provide the ip. Otherwise it is optional
+      max_users: 1500 # change it
+      username: "myadminusername"
+      password: "myadminpassword"
+      port: 54321 #change it
+      same_port: 
+        active: true 
+        port: 2053 #port used for vless ws tls behind cdn
+      multi_port: 
+        active: false # only activate multi_port or same_port on one server. DO NOT SET BOTH TO TRUE
+      traffic_limit: 15516192768 #14 GB
+      description: "Server Location: Finland (google)"
+
+    "earth.womanlifefreedom.vip": #example "google.com"
+      cdn: true
+      ip: "78.42.182.42" # if cdn is true and multi_port is active, you have to provide the ip. Otherwise it is optional
+      max_users: 1700 # change it
+      username: "myadminusername"
+      password: "myadminpassword"
+      port: 54321 #change it
+      same_port: 
+        active: true
+        port: 2053 
+      multi_port: 
+        active: false
+      traffic_limit: 15516192768 #7GB
+      description: "Server Location: Finland (earth)"
+  pool2:
+    "fire.womanlifefreedom.vip": #example "google.com"
+      cdn: false
+      ip: "78.43.182.22" # if cdn is true and multi_port is active, you have to provide the ip. Otherwise it is optional
+      max_users: 1700 # change it
+      username: "myadminusername"
+      password: "myadminpassword"
+      port: 54321 #change it
+      same_port: 
+        active: false
+        port: 2053 
+      multi_port: 
+        active: true #for multioport xtls CDN must be false
+      traffic_limit: 15516192768 #7GB
+      description: "Server Location: Finland (earth)"
