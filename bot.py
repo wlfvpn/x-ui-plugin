@@ -11,6 +11,7 @@ from utils import load_config
 import argparse
 import datetime
 import random
+import asyncio
 
 # Enable logging
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -35,20 +36,21 @@ async def gen_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
   
     if not await is_member(update, context, send_thank_you=False):
         return
-    today = datetime.date.today()
-    date_string = today.strftime("%Y-%m-%d")
-   
-    ret, url, server_desc = server_manager.generate_url(str(update.effective_user.id),str(update.effective_user.username)) 
+    
+    lock = asyncio.Lock()
+
+    async with lock:
+        urls = server_manager.generate_url(str(update.effective_user.id),str(update.effective_user.username)) 
    
     print(f'Gave link to @{update.effective_user.username}')
-    if ret:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=server_desc)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="`"+url+"`", parse_mode="MarkdownV2")
-  
+    if urls:
+        for url in urls:
+            if url['url']:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=url['desc'])
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="`"+url['url']+"`", parse_mode="MarkdownV2")
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Something went wrong. Please try again in few mintues. If it happened again, please contact our support.")
         await context.bot.send_message(chat_id=update.effective_chat.id, text="مشکلی در ارتباط با سرورها پیش آمده. لطفا مجدد تکرار کنید.")
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=url)
 
 async def is_maintenance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     config = load_config(config_path)

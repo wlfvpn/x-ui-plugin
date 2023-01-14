@@ -9,7 +9,7 @@ class SQLiteDB:
 
         self.cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
         if not self.cursor.fetchone():
-            self.cursor.execute(f"CREATE TABLE users (telegram_id, telegram_username, remark, uuid, creation_date, link, server, port, mode)")
+            self.cursor.execute(f"CREATE TABLE users (telegram_id, telegram_username, remark, uuid, creation_date, link, server, port, mode, server_desc)")
         
         self.cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='inbounds'")
         if not self.cursor.fetchone():
@@ -38,6 +38,7 @@ class SQLiteDB:
         query = f"INSERT INTO {table_name} VALUES ({placeholders})"
         self.cursor.execute(query, values)
         self.conn.commit()
+
         
         
     def count_entries_for_server(self, server):
@@ -63,18 +64,54 @@ class SQLiteDB:
         if row:
             return row[0]
         else:
-            return None    
+            return None  
+          
+    def get_clients(self, server,totalGB):
+        # Select the columns you want to retrieve
+        self.cursor.execute("SELECT remark, uuid FROM users WHERE server=?", (server,))
 
+        # Fetch all rows as a list of tuples
+        rows = self.cursor.fetchall()
 
-    def get_links(self, telegram_id):
-            """Returns the link for the given telegram_id, or None if not found"""
-            query = f"SELECT link FROM users WHERE telegram_id = ?"
-            self.cursor.execute(query, (telegram_id,))
-            rows = self.cursor.fetchall()
-            if rows:
-                return '\n \n'.join([row[0] for row in rows])
-            return None
+        # Create an empty list to store the JSON objects
+        json_list = []
+
+        # Iterate through the rows
+        for row in rows:
+            json_list.append({'email': row[0], 'id': row[1], 'flow': 'xtls-rprx-direct', 'totalGB': totalGB})
+
+        return json_list
+
+    # def get_links_and_server(self, telegram_id):
+    #         """Returns the link for the given telegram_id, or None if not found"""
+    #         query = f"SELECT link, server FROM users WHERE telegram_id = ?"
+    #         self.cursor.execute(query, (telegram_id,))
+    #         rows = self.cursor.fetchall()
+            
+    #         if rows:
+    #             return [{'url': row[0], 'server': row[1]} for row in rows]
+    #         return None
         
+    def get_links_and_server_desc(self, telegram_id):
+        """Returns a list of dictionaries containing the link and server for the given telegram_id, or None if not found"""
+        query = f"SELECT link, server_desc FROM users WHERE telegram_id = ?"
+        self.cursor.execute(query, (telegram_id,))
+        rows = self.cursor.fetchall()
+        if rows:
+            result = []
+            current_server = rows[0][1]
+            current_urls = []
+            for row in rows:
+                if row[1] == current_server:
+                    current_urls.append(row[0])
+                else:
+                    result.append({'desc': current_server, 'url': '\n \n'.join(current_urls)})
+                    current_server = row[1]
+                    current_urls = [row[0]]
+            result.append({'desc': current_server, 'url': '\n \n'.join(current_urls)})
+            return result
+        return None
+
     def get_server(self, telegram_id):
         """Returns the link for the given telegram_id, or None if not found"""
         query = f"SELECT server FROM users WHERE telegram_id = ?"
@@ -107,9 +144,15 @@ class SQLiteDB:
     def close(self):
         """Close the database connection"""
         self.conn.close()
+        
+    
+    def __del__(self):
+        self.cursor.close()
+        self.conn.close()
 
 if __name__=="__main__":
-    db = SQLiteDB('test_database.db')
-    db.add_row('users',('my_id', 'my_username', 'my_id@my_username', '2022', 'vles://xyz', '127.0.0.1', '443', 0, '700000'))
-    print(db.generate_random_port('127.0.0.1'))
+    db = SQLiteDB('database.db')
+    # db.add_row('users',('my_id', 'my_username', 'my_id@my_username', '2022', 'vles://xyz', '127.0.0.1', '443', 0, '700000'))
+    # print(db.generate_random_port('127.0.0.1'))
+    print(db.get_settings('google.womanlifefreedom.vip',1000))
     db.close()

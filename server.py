@@ -17,11 +17,16 @@ class Server():
         self.traffic_limit = traffic_limit
         self.db = db
         self.description = description
-        self.vless_ws_port = 2053
         self.same_port = same_port
         self.multi_port = multi_port
         self.cdn = cdn
         self.ip = ip
+        if self.same_port['active'] == self.multi_port['active']:
+            raise Exception(f"Turn on either 'same_port' or 'multiport' for {self.address}.")
+        
+        if self.cdn and self.multi_port['active']:
+            raise Exception(f"CDN and 'multi_port' cannot be ON at the same time for {self.address}.")
+
         cloudflare_http_ports = [80, 8080, 8880, 2052, 2082, 2086, 2095] 
         cloudflare_https_ports = [443, 2053, 2083, 2087, 2096, 8443]
         
@@ -52,7 +57,8 @@ class Server():
         user_config = gen_user_config_vless_ws(name=remark, email="initialize@womanlifefreedom", uuid=random_client_id, server_address=self.address, port=self.same_port['port'], traffic_limit=self.traffic_limit)
         r = self.login()
         r = requests.post(f"http://{self.url}/xui/inbound/add", data=user_config, cookies=r.cookies) #TODO: Make it with http
-        self.db.add_row('inbounds',(r.json()['obj']['id'],remark, r.json()['obj']['settings'], self.address, self.vless_ws_port, 0, creation_date))
+        print(r)
+        self.db.add_row('inbounds',(r.json()['obj']['id'],remark, r.json()['obj']['settings'], self.address, self.same_port['port'], 0, creation_date))
 
     def get_load(self):
         return 0
@@ -63,21 +69,24 @@ class Server():
         creation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         links = []
         
+        
         if self.same_port['active']:
             inbound_name = "vless-ws-tls-cdn"
-            current_setting = self.db.query_from_remark_and_server('settings',self.address,inbound_name)
-            clients = json.loads(current_setting)['clients']
+            # current_setting = self.db.query_from_remark_and_server('settings',self.address,inbound_name)
+            # clients = json.loads(current_setting)['clients']
+            clients = self.db.get_clients(self.address, self.traffic_limit)
             email = remark 
-            config = gen_user_config_vless_ws(name=inbound_name, email=email, uuid=random_client_id, server_address=self.address, port=self.vless_ws_port, traffic_limit=self.traffic_limit, clients=clients)
+            config = gen_user_config_vless_ws(name=inbound_name, email=email, uuid=random_client_id, server_address=self.address, port=self.same_port['port'], traffic_limit=self.traffic_limit, clients=clients)
             # print(config)
             inbound_id = self.db.query_from_remark_and_server('id',self.address,inbound_name)
             r = self.login()
             r = requests.post(f"http://{self.url}/xui/inbound/update/{inbound_id}", data=config, cookies=r.cookies) #TODO: Make it with https
-            if json.loads(r.text)['success']:
-                self.db.update_settings(inbound_id,config['settings'])
+            result = json.loads(r.text)
+            if result['success']:
+                self.db.update_settings(inbound_id,result['obj']['settings'])
                 
-                link = f"vless://{random_client_id}@66.235.200.136:{self.vless_ws_port}?type=ws&security=tls&host={self.address}&sni={self.address}&alpn=http/1.1&path=/wlf?ed=2048#WomanLifeFreedomVPN@{telegram_username}"
-                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, self.vless_ws_port,'same_port'))
+                link = f"vless://{random_client_id}@66.235.200.136:{self.same_port['port']}?type=ws&security=tls&host={self.address}&sni={self.address}&alpn=http/1.1&path=/wlf?ed=2048#WomanLifeFreedomVPN@{telegram_username}"
+                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, self.same_port['port'],'same_port',self.description))
                 print(link)
                 links.append(link)
             else:
@@ -94,14 +103,9 @@ class Server():
             if json.loads(r.text)['success']:
             #   print('Added', remark, r.content)
                 if self.cdn:
-                    address = self.ip
-                else:
-                    address = self.address
-                        
-                address = self.address    #overwrite because xtls cannot connect through ip. You can configure other protocols without tls
-                
-                link = f"vless://{random_client_id}@{address}:{port}?type=tcp&security=xtls&flow=xtls-rprx-direct&sni={self.address}&alpn=h2,http/1.1#{remark}"
-                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, port,'multi_port'))
+                    print('ERROR: xtls is not supported in CDN mode.')
+                link = f"vless://{random_client_id}@{self.address}:{port}?type=tcp&security=xtls&flow=xtls-rprx-direct&sni={self.address}&alpn=h2,http/1.1#{remark}"
+                self.db.add_row('users',(telegram_id, telegram_username, remark, random_client_id, creation_date, link, self.address, port,'multi_port', self.description))
 
                 print(link)
                 links.append(link)
