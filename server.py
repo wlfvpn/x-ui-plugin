@@ -116,10 +116,12 @@ class Server():
         return True, '\n \n'.join(links)
          
 if __name__=="__main__":
-    config = load_config('config_test.yaml')
+    config = load_config('config.yaml')
 
     db = SQLiteDB('database.db')
-    server_name, server_config = config['servers'].popitem()
+    server_name, server_config = config['pools']['pool1'].popitem()
     
     Server = Server(server_name, **server_config, db = db)
-    Server.generate_url('123','test-gp')
+    num_accounts = 1
+    for i in range(num_accounts):
+        Server.generate_url(str(i),'test-gp')
