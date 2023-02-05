@@ -6,6 +6,7 @@
 telegram_bot_token: "TOKEN" #change it
 maintenance: false #turn it to true to force the bot to go into maintanance mode.
 generate_unique: true
+telegram_channel_id: "@womanlifefreedomvpn"
 
 pools:
   pool1: #one server will be selected  in every pool
